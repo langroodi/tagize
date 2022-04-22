@@ -1,0 +1,9 @@
+
+name: 'Tagize'
+description: 'Add/Adjust Git tag aliases based on a semantic versioning schema'
+branding:
+  icon: 'tag'
+  color: 'orange'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
