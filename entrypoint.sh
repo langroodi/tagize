@@ -61,8 +61,8 @@ AliasVersion () {
 
 	# Concat the version symbol with the verion alias to obtain the tag alias
 	TAGALIAS="${VERSIONSYMBOL}${VERSIONALIAS}"
-	# Concat the tag alias with '*' to obtain the tag pattern
-	TAGPATTERN="${TAGALIAS}*"
+	# Concat the tag alias with '.*' to obtain the tag pattern
+	TAGPATTERN="${TAGALIAS}.*"
 	# Declare a local array that contains the matches of the tag pattern
 	TAGMATCHES=()
 	# Launch 'git tag -l "${TAGPATTERN}' to get the existing tags starts with the tag pattern
@@ -94,4 +94,21 @@ mapfile -t MAJORVERSIONS < <( git tag | cut -d"${VERSIONSYMBOL}" -f2 | cut -d"."
 # Interate over all the major verions
 for MAJORVERSION in "${MAJORVERSIONS[@]}"; do
 	AliasVersion "${MAJORVERSION}"
+
+	# Declare a local array that contains the minor verions of the major version
+	MINORVERSIONS=()
+	# Concat the version symbol, the major verion, and  '.*' characters to obtain the pattern
+	PATTERN="${VERSIONSYMBOL}${MAJORVERSION}.*"
+	# Launch 'git tag -l "${PATTERN}' to get the existing tags starts with the pattern
+	# Pipeline the result with 'cut -d"${VERSIONSYMBOL}" -f2' to remove the version symbol from the beginning of the tags
+	# Pipeline the result with 'cut -d"." -f 1-2' to parse the major version (1) and the minor version (2)
+	# Pipeline the result with 'sort' to sort the parsed major verions
+	# Pipeline the result with 'unique' to remove the similar major verions
+	# Map the unique major verions to the declared array
+	mapfile -t MINORVERSIONS < <( git tag -l "${PATTERN}" | cut -d"${VERSIONSYMBOL}" -f2 | cut -d"." -f 1-2 | sort | uniq )
+
+	# Interate over all the minor verions
+	for MINORVERSION in "${MINORVERSIONS[@]}"; do
+		AliasVersion "${MINORVERSION}"
+	done
 done
