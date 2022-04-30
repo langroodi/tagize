@@ -14,13 +14,6 @@ readonly SANDBOXFOLDER
 SANDBOXFILE="sandbox.txt"
 readonly SANDBOXFILE
 
-# Declare the read-only initial version for unt testing
-INITIALVERSION="1.0.0"
-readonly INITIALVERSION
-
-# Declare a global associated array that contains tag and commit hash pairs
-declare -A EXPECTEDRESULTS
-
 InitializeSandbox () {
 	mkdir $SANDBOXFOLDER
 	cd $SANDBOXFOLDER
@@ -127,10 +120,10 @@ RegisterMajorTagAlias () {
 	VERSIONARRAY=(${CURRENTVERSION//./ })
 
 	MAJORVERSION="${VERSIONARRAY[0]}"
-	# Concat the version symbol and the major version as the tag alias
-	TAGALIAS="${VERSIONSYMBOL}${MAJORVERSION}"
+	# Copy the major version as the tag alias version
+	TAGALIASVERSION="${MAJORVERSION}"
 	# Add the tag-commit pair to the expected result dictionary
-	EXPECTEDRESULTS["${TAGALIAS}"]=$TAGCOMMIT
+	EXPECTEDRESULTS["${TAGALIASVERSION}"]=$TAGCOMMIT
 }
 
 RegisterMinorTagAlias () {
@@ -142,56 +135,106 @@ RegisterMinorTagAlias () {
 
 	MAJORVERSION="${VERSIONARRAY[0]}"
 	MINORVERSION="${VERSIONARRAY[1]}"
-	# Concat the version symbol with the major version and the minor version (joined by a '.' character) as the tag alias
-	TAGALIAS="${VERSIONSYMBOL}${MAJORVERSION}.${MINORVERSION}"
+	# Join the major version and the minor version by a '.' character as the tag alias version
+	TAGALIASVERSION="${MAJORVERSION}.${MINORVERSION}"
 	# Add the tag-commit pair to the expected result dictionary
-	EXPECTEDRESULTS["${TAGALIAS}"]=$TAGCOMMIT
+	EXPECTEDRESULTS["${TAGALIASVERSION}"]=$TAGCOMMIT
+}
+
+InitializeExpectedResults () {
+	# Declare a global associated array that contains tag and commit hash pairs
+	declare -g -A EXPECTEDRESULTS
+
+	# v1.0.0
+	CURRENTVERSION="1.0.0"
+	AddSandboxTag $CURRENTVERSION
+
+	# v1.0.1
+	CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
+	AddSandboxTag $CURRENTVERSION
+	TAGCOMMIT=$(GetSandboxLastCommit)
+	RegisterMinorTagAlias $CURRENTVERSION $TAGCOMMIT
+
+	# v1.1.0
+	CURRENTVERSION=$(IncrementMinorVersion $CURRENTVERSION)
+	AddSandboxTag $CURRENTVERSION
+
+	# v1.1.1
+	CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
+	AddSandboxTag $CURRENTVERSION
+	TAGCOMMIT=$(GetSandboxLastCommit)
+	RegisterMinorTagAlias $CURRENTVERSION $TAGCOMMIT
+
+	# v1.2.0
+	CURRENTVERSION=$(IncrementMinorVersion $CURRENTVERSION)
+	AddSandboxTag $CURRENTVERSION
+	TAGCOMMIT=$(GetSandboxLastCommit)
+	RegisterMinorTagAlias $CURRENTVERSION $TAGCOMMIT
+	RegisterMajorTagAlias $CURRENTVERSION $TAGCOMMIT
+
+	# v2.0.0
+	CURRENTVERSION=$(IncrementMajorVersion $CURRENTVERSION)
+	AddSandboxTag $CURRENTVERSION
+
+	# v2.0.1
+	CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
+	AddSandboxTag $CURRENTVERSION
+
+	# v2.0.2
+	CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
+	AddSandboxTag $CURRENTVERSION
+	TAGCOMMIT=$(GetSandboxLastCommit)
+	RegisterMinorTagAlias $CURRENTVERSION $TAGCOMMIT
+	RegisterMajorTagAlias $CURRENTVERSION $TAGCOMMIT
+}
+
+InitializeActualResults () {
+	# Declare a global associated array that contains tag and commit hash pairs
+	declare -g -A ACTUALRESULTS
+
+	cd $SANDBOXFOLDER
+	# Get the last commit hash
+	# Read each command output line and split it by space into the tag name and the tag commit
+	while read TAGNAME TAGCOMMIT; do
+		# Consider the tag name as the associated array key and the tag commit as the key value
+		ACTUALRESULTS["${TAGNAME}"]=$TAGCOMMIT
+	# Launch 'git show-ref --tag' to get the combination of existing tags and their commit hashes 
+	# Pipeline the result with 'awk '{print $2 " " $1}' to bring tags first and then the commit hashes
+	# Pipeline the result with 'cut -d"/" -f3' to remove 'refs/tags/' from the beginning of the tags
+	# Pipeline the result with 'cut -d"${VERSIONSYMBOL}" -f2' remove the version symbol from the beginning of the tags
+	done < <( git show-ref --tag | awk '{print $2 " " $1}' | cut -d"/" -f3 | cut -d"${VERSIONSYMBOL}" -f2 )
+	# Pop back the current directory
+	cd ..
+}
+
+ValidateResults () {
+	PASSED=true
+	# Iterate over all the tag alias versions in the expected results dictionary
+	for TAGALIASVERSION in "${!EXPECTEDRESULTS[@]}"; do
+		# Fetch the expected commit hash that corresponds to the current tag alias version
+		EXPECTEDCOMMIT=${EXPECTEDRESULTS[$TAGALIASVERSION]}
+		# Fetch the actual commit hash that corresponds to the current tag alias version
+		ACTUALCOMMIT=${ACTUALRESULTS[$TAGALIASVERSION]}
+
+		if [ "${EXPECTEDCOMMIT}" == "${ACTUALCOMMIT}" ]; then
+ 			echo "$(tput setaf 2)[PASSED] $(tput setaf 7)${VERSIONSYMBOL}${TAGALIASVERSION} tag alias validation"
+		else
+			PASSED=false
+			echo "$(tput setaf 1)[FAILED] $(tput setaf 7)${VERSIONSYMBOL}${TAGALIASVERSION} tag alias validation"
+		fi
+	done
+
+	if [ $PASSED ]; then
+		exit 0
+	else
+		exit 1
+	fi
 }
 
 InitializeSandbox
 
-# v1.0.0
-CURRENTVERSION=$INITIALVERSION
-AddSandboxTag $CURRENTVERSION
+InitializeExpectedResults
 
-# v1.0.1
-CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
-AddSandboxTag $CURRENTVERSION
-TAGCOMMIT=$(GetSandboxLastCommit)
-RegisterMinorTagAlias $CURRENTVERSION $TAGCOMMIT
+InitializeActualResults
 
-# v1.1.0
-CURRENTVERSION=$(IncrementMinorVersion $CURRENTVERSION)
-AddSandboxTag $CURRENTVERSION
-
-# v1.1.1
-CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
-AddSandboxTag $CURRENTVERSION
-TAGCOMMIT=$(GetSandboxLastCommit)
-RegisterMinorTagAlias $CURRENTVERSION $TAGCOMMIT
-
-# v1.2.0
-CURRENTVERSION=$(IncrementMinorVersion $CURRENTVERSION)
-AddSandboxTag $CURRENTVERSION
-TAGCOMMIT=$(GetSandboxLastCommit)
-RegisterMinorTagAlias $CURRENTVERSION $TAGCOMMIT
-RegisterMajorTagAlias $CURRENTVERSION $TAGCOMMIT
-
-# v2.0.0
-CURRENTVERSION=$(IncrementMajorVersion $CURRENTVERSION)
-AddSandboxTag $CURRENTVERSION
-
-# v2.0.1
-CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
-AddSandboxTag $CURRENTVERSION
-
-# v2.0.2
-CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
-AddSandboxTag $CURRENTVERSION
-TAGCOMMIT=$(GetSandboxLastCommit)
-RegisterMinorTagAlias $CURRENTVERSION $TAGCOMMIT
-RegisterMajorTagAlias $CURRENTVERSION $TAGCOMMIT
-
-for key in "${!EXPECTEDRESULTS[@]}"; do
-    echo "$key ${EXPECTEDRESULTS[$key]}"
-done
+ValidateResults
