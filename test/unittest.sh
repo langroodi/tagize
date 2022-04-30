@@ -37,7 +37,7 @@ InitializeSandbox () {
 	git submodule add "./${SANDBOXFOLDER}"
 }
 
-AddTag () {
+AddSandboxTag () {
 	CURRENTVERSION=$1
 
 	cd $SANDBOXFOLDER
@@ -53,6 +53,16 @@ AddTag () {
 	git tag "${TAG}"
 	# Pop back the current directory
 	cd ..
+}
+
+GetSandboxLastCommit () {
+	cd $SANDBOXFOLDER
+	# Get the last commit hash
+	RESULT="$(git rev-parse HEAD)"
+	# Pop back the current directory
+	cd ..
+
+	echo "$RESULT"
 }
 
 IncrementMajorVersion () {
@@ -109,74 +119,78 @@ IncrementPatchVersion () {
 	echo "$RESULT"
 }
 
-RegisterTagAlias () {
-	VERSIONALIAS=$1
-
-	# Join the version symbol and the version alias by a '.' character as the tag alias
-	TAGALIAS="${VERSIONSYMBOL}${VERSIONALIAS}"
-	# Get the last commit hash
-	LASTCOMMIT="$(git rev-parse HEAD)"
-	# Add the tag-commit pair to the expected result dictionary
-	EXPECTEDRESULTS["${TAGALIAS}"]=$LASTCOMMIT
-}
-
 RegisterMajorTagAlias () {
 	CURRENTVERSION=$1
+	TAGCOMMIT=$2
 
 	# Split the version by a '.' character
 	VERSIONARRAY=(${CURRENTVERSION//./ })
 
 	MAJORVERSION="${VERSIONARRAY[0]}"
-	MINORVERSION="${VERSIONARRAY[1]}"
-	# Copy the major version as the tag alias
-	VERSIONALIAS="${MAJORVERSION}"
-	RegisterTagAlias $VERSIONALIAS
+	# Concat the version symbol and the major version as the tag alias
+	TAGALIAS="${VERSIONSYMBOL}${MAJORVERSION}"
+	# Add the tag-commit pair to the expected result dictionary
+	EXPECTEDRESULTS["${TAGALIAS}"]=$TAGCOMMIT
 }
 
 RegisterMinorTagAlias () {
 	CURRENTVERSION=$1
+	TAGCOMMIT=$2
 
 	# Split the version by a '.' character
 	VERSIONARRAY=(${CURRENTVERSION//./ })
 
 	MAJORVERSION="${VERSIONARRAY[0]}"
 	MINORVERSION="${VERSIONARRAY[1]}"
-	# Join the major version and the minor version by a '.' character as the tag alias
-	VERSIONALIAS="${MAJORVERSION}.${MINORVERSION}"
-	RegisterTagAlias $VERSIONALIAS
+	# Concat the version symbol with the major version and the minor version (joined by a '.' character) as the tag alias
+	TAGALIAS="${VERSIONSYMBOL}${MAJORVERSION}.${MINORVERSION}"
+	# Add the tag-commit pair to the expected result dictionary
+	EXPECTEDRESULTS["${TAGALIAS}"]=$TAGCOMMIT
 }
 
 InitializeSandbox
 
+# v1.0.0
 CURRENTVERSION=$INITIALVERSION
-AddTag $CURRENTVERSION
+AddSandboxTag $CURRENTVERSION
 
+# v1.0.1
 CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
-AddTag $CURRENTVERSION
-RegisterMinorTagAlias $CURRENTVERSION
+AddSandboxTag $CURRENTVERSION
+TAGCOMMIT=$(GetSandboxLastCommit)
+RegisterMinorTagAlias $CURRENTVERSION $TAGCOMMIT
 
+# v1.1.0
 CURRENTVERSION=$(IncrementMinorVersion $CURRENTVERSION)
-AddTag $CURRENTVERSION
+AddSandboxTag $CURRENTVERSION
 
+# v1.1.1
 CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
-AddTag $CURRENTVERSION
-RegisterMinorTagAlias $CURRENTVERSION
+AddSandboxTag $CURRENTVERSION
+TAGCOMMIT=$(GetSandboxLastCommit)
+RegisterMinorTagAlias $CURRENTVERSION $TAGCOMMIT
 
+# v1.2.0
 CURRENTVERSION=$(IncrementMinorVersion $CURRENTVERSION)
-AddTag $CURRENTVERSION
-RegisterMinorTagAlias $CURRENTVERSION
-RegisterMajorTagAlias $CURRENTVERSION
+AddSandboxTag $CURRENTVERSION
+TAGCOMMIT=$(GetSandboxLastCommit)
+RegisterMinorTagAlias $CURRENTVERSION $TAGCOMMIT
+RegisterMajorTagAlias $CURRENTVERSION $TAGCOMMIT
 
+# v2.0.0
 CURRENTVERSION=$(IncrementMajorVersion $CURRENTVERSION)
-AddTag $CURRENTVERSION
+AddSandboxTag $CURRENTVERSION
 
+# v2.0.1
 CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
-AddTag $CURRENTVERSION
+AddSandboxTag $CURRENTVERSION
 
+# v2.0.2
 CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
-AddTag $CURRENTVERSION
-RegisterMinorTagAlias $CURRENTVERSION
-RegisterMajorTagAlias $CURRENTVERSION
+AddSandboxTag $CURRENTVERSION
+TAGCOMMIT=$(GetSandboxLastCommit)
+RegisterMinorTagAlias $CURRENTVERSION $TAGCOMMIT
+RegisterMajorTagAlias $CURRENTVERSION $TAGCOMMIT
 
 for key in "${!EXPECTEDRESULTS[@]}"; do
     echo "$key ${EXPECTEDRESULTS[$key]}"
