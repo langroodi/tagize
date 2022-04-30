@@ -6,6 +6,55 @@ set -x
 VERSIONSYMBOL="v"
 readonly VERSIONSYMBOL
 
+# Declare the read-only sandbox folder name for unt testing
+SANDBOXFOLDER="sandbox"
+readonly SANDBOXFOLDER
+
+# Declare the read-only sandbox file name for unt testing
+SANDBOXFILE="sandbox.txt"
+readonly SANDBOXFILE
+
+# Declare the read-only initial version for unt testing
+INITIALVERSION="1.0.0"
+readonly INITIALVERSION
+
+# Declare a global associated array that contains tag and commit hash pairs
+declare -A EXPECTEDRESULTS
+
+InitializeSandbox () {
+	mkdir $SANDBOXFOLDER
+	cd $SANDBOXFOLDER
+	# Initalize the sandbox repo within the current repo
+	git init
+	# Create the sandbox file
+	touch $SANDBOXFILE
+	# Stage the sandbox file creation
+	git add .
+	# Commit the sandbox file creation
+	git commit -m "Initial commit"
+	cd ..
+	# Add the sandbox repo as the current repo sub-module
+	git submodule add "./${SANDBOXFOLDER}"
+}
+
+AddTag () {
+	CURRENTVERSION=$1
+
+	cd $SANDBOXFOLDER
+	# (Over)write the current version to the sandbox file as a dummy change
+	echo "${CURRENTVERSION}" > $SANDBOXFILE
+	# Stage the dummy change
+	git add .
+	# Commit the dummy change
+	git commit -m "Commit version ${CURRENTVERSION}"
+	# Create the tag by concatting the version symbol and the version itself
+	TAG="${VERSIONSYMBOL}${CURRENTVERSION}"
+	# Add the tag
+	git tag "${TAG}"
+	# Pop back the current directory
+	cd ..
+}
+
 IncrementMajorVersion () {
 	CURRENTVERSION=$1
 
@@ -19,9 +68,9 @@ IncrementMajorVersion () {
 	# Reset the current patch version to zero as the new patch version
 	NEWPATCHVERSION="0"
 	# Join the new major, minor, and patch versions by a '.' character as the new version
-	NEWVERSION="${NEWMAJORVERSION}.${NEWMINORVERSION}.${NEWPATCHVERSION}"
+	RESULT="${NEWMAJORVERSION}.${NEWMINORVERSION}.${NEWPATCHVERSION}"
 
-	echo "$NEWVERSION"
+	echo "$RESULT"
 }
 
 IncrementMinorVersion () {
@@ -37,9 +86,9 @@ IncrementMinorVersion () {
 	# Reset the current patch version to zero as the new patch version
 	NEWPATCHVERSION="0"
 	# Join the new major, minor, and patch versions by a '.' character as the new version
-	NEWVERSION="${NEWMAJORVERSION}.${NEWMINORVERSION}.${NEWPATCHVERSION}"
+	RESULT="${NEWMAJORVERSION}.${NEWMINORVERSION}.${NEWPATCHVERSION}"
 
-	echo "$NEWVERSION"
+	echo "$RESULT"
 }
 
 IncrementPatchVersion () {
@@ -55,15 +104,80 @@ IncrementPatchVersion () {
 	# Increment the current patch version by one as the new patch version
 	NEWPATCHVERSION=$((${VERSIONARRAY[2]} + 1))
 	# Join the new major, minor, and patch versions by a '.' character as the new version
-	NEWVERSION="${NEWMAJORVERSION}.${NEWMINORVERSION}.${NEWPATCHVERSION}"
+	RESULT="${NEWMAJORVERSION}.${NEWMINORVERSION}.${NEWPATCHVERSION}"
 
-	echo "$NEWVERSION"
+	echo "$RESULT"
 }
 
-MYVERSION="1.0.0"
+RegisterTagAlias () {
+	VERSIONALIAS=$1
 
-MYNEWVERSION=$(IncrementPatchVersion $MYVERSION)
+	# Join the version symbol and the version alias by a '.' character as the tag alias
+	TAGALIAS="${VERSIONSYMBOL}${VERSIONALIAS}"
+	# Get the last commit hash
+	LASTCOMMIT="$(git rev-parse HEAD)"
+	# Add the tag-commit pair to the expected result dictionary
+	EXPECTEDRESULTS["${TAGALIAS}"]=$LASTCOMMIT
+}
 
-MYNEWVERSION=$(IncrementMinorVersion $MYNEWVERSION)
+RegisterMajorTagAlias () {
+	CURRENTVERSION=$1
 
-MYNEWVERSION=$(IncrementMajorVersion $MYNEWVERSION)
+	# Split the version by a '.' character
+	VERSIONARRAY=(${CURRENTVERSION//./ })
+
+	MAJORVERSION="${VERSIONARRAY[0]}"
+	MINORVERSION="${VERSIONARRAY[1]}"
+	# Copy the major version as the tag alias
+	VERSIONALIAS="${MAJORVERSION}"
+	RegisterTagAlias $VERSIONALIAS
+}
+
+RegisterMinorTagAlias () {
+	CURRENTVERSION=$1
+
+	# Split the version by a '.' character
+	VERSIONARRAY=(${CURRENTVERSION//./ })
+
+	MAJORVERSION="${VERSIONARRAY[0]}"
+	MINORVERSION="${VERSIONARRAY[1]}"
+	# Join the major version and the minor version by a '.' character as the tag alias
+	VERSIONALIAS="${MAJORVERSION}.${MINORVERSION}"
+	RegisterTagAlias $VERSIONALIAS
+}
+
+InitializeSandbox
+
+CURRENTVERSION=$INITIALVERSION
+AddTag $CURRENTVERSION
+
+CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
+AddTag $CURRENTVERSION
+RegisterMinorTagAlias $CURRENTVERSION
+
+CURRENTVERSION=$(IncrementMinorVersion $CURRENTVERSION)
+AddTag $CURRENTVERSION
+
+CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
+AddTag $CURRENTVERSION
+RegisterMinorTagAlias $CURRENTVERSION
+
+CURRENTVERSION=$(IncrementMinorVersion $CURRENTVERSION)
+AddTag $CURRENTVERSION
+RegisterMinorTagAlias $CURRENTVERSION
+RegisterMajorTagAlias $CURRENTVERSION
+
+CURRENTVERSION=$(IncrementMajorVersion $CURRENTVERSION)
+AddTag $CURRENTVERSION
+
+CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
+AddTag $CURRENTVERSION
+
+CURRENTVERSION=$(IncrementPatchVersion $CURRENTVERSION)
+AddTag $CURRENTVERSION
+RegisterMinorTagAlias $CURRENTVERSION
+RegisterMajorTagAlias $CURRENTVERSION
+
+for key in "${!EXPECTEDRESULTS[@]}"; do
+    echo "$key ${EXPECTEDRESULTS[$key]}"
+done
