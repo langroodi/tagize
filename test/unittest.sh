@@ -18,6 +18,15 @@ readonly BASHSCRIPT
 SANDBOXFILE="sandbox.txt"
 readonly SANDBOXFILE
 
+ConfigureGitUser () {
+    # Set Git user configuration
+    git config --global user.name github-actions[bot]
+    git config --global user.email github-actions[bot]@users.noreply.github.com
+    
+    # Add shared GitHub Workspace as exception due to CVE-2022-24765
+    git config --global --add safe.directory /github/workspace
+}
+
 InitializeSandbox () {
 	mkdir $SANDBOXFOLDER
 	cd $SANDBOXFOLDER
@@ -236,6 +245,8 @@ ValidateResults () {
 		exit 1
 	fi
 }
+
+ConfigureGitUser
 
 InitializeSandbox
 
