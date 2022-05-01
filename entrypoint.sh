@@ -18,6 +18,8 @@ ConfigureGit () {
     
     # Add shared GitHub Workspace as exception due to CVE-2022-24765
     git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+	# Configure remote repo
+	 git remote set-url origin "https://${GITHUB_ACTOR}:${INPUT_GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
     # Fetch all the remote tags
     git fetch --all --tags
 }
