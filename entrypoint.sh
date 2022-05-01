@@ -18,8 +18,8 @@ ConfigureGit () {
     
     # Add shared GitHub Workspace as exception due to CVE-2022-24765
     git config --global --add safe.directory /github/workspace
-	# Fetch all the remote tags
-	git fetch --all --tags
+    # Fetch all the remote tags
+    git fetch --all --tags
 }
 
 InitializeTagDictionary () {
@@ -111,7 +111,7 @@ mapfile -t MAJORVERSIONS < <( git tag | cut -d"${VERSIONSYMBOL}" -f2 | cut -d"."
 # Interate over all the major verions
 for MAJORVERSION in "${MAJORVERSIONS[@]}"; do
 	# Ignore major versions less than one
-	if [ $MAJORVERSION < 1 ]; then
+	if (( $MAJORVERSION < 1 )); then
 		continue
 	fi
 
