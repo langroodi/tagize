@@ -206,6 +206,9 @@ InitializeActualResults () {
 
 	cd $SANDBOXFOLDER
 
+	# Enable the test mode for running the bash script
+	TESTMODE=true
+	export TESTMODE
 	# Run the bash script
 	bash "./${BASHSCRIPT}"
 	# Read each command output line and split it by space into the tag name and the tag commit

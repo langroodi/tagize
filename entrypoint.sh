@@ -49,11 +49,19 @@ PushTag () {
 		else
 			# Delete the existing tag alias to add it again with the requested commit hash later
 			git tag -d "${TAGNAME}"
+			# Delete the tag alias from the remote repo if the test mode is not active
+			if [ ! $TESTMODE ]; then
+				git push --delete origin "${TAGNAME}" || exit 1
+			fi
 		fi
 	fi
 
 	# Add the tag alias with the requested commit hash
 	git tag "${TAGNAME}" "${TAGCOMMIT}"
+	# Add the tag alias to the remote repo if the test mode is not active
+	if [ ! $TESTMODE ]; then
+		git push origin "${TAGNAME}" || exit 1
+	fi
 }
 
 AliasVersion () {
@@ -78,6 +86,13 @@ AliasVersion () {
 	# Push the tag alias for the latest version
 	PushTag "${VERSIONALIAS}" "${TAGALIAS}" "${TAGCOMMIT}"
 }
+
+# Install dependencies and configure the GIT user if the test mode is not active
+if [ ! $TESTMODE ]; then
+	InstallDependencies
+
+	ConfigureGitUser
+fi
 
 InitializeTagDictionary
 
