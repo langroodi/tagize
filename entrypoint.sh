@@ -47,7 +47,7 @@ PushTag () {
 		# Check whether the existing tag alias has the same commit hash or not
 		if [ "${TAGDICTIONARY[$TAGVERSION]}" == "${TAGCOMMIT}" ]; then
 			# Return immediately due to the equality of the existing commit hash and the requested one
-			exit 0
+			return 0
 		else
 			# Delete the existing tag alias to add it again with the requested commit hash later
 			git tag -d "${TAGNAME}"
