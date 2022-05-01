@@ -13,11 +13,11 @@ InstallDependencies () {
 
 ConfigureGit () {
     # Set Git user configuration
-    git config --global user.name github-actions[bot]
-    git config --global user.email github-actions[bot]@users.noreply.github.com
+    git config --global user.name "${GITHUB_ACTOR}"
+    git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
     
     # Add shared GitHub Workspace as exception due to CVE-2022-24765
-    git config --global --add safe.directory /github/workspace
+    git config --global --add safe.directory "${GITHUB_WORKSPACE}"
     # Fetch all the remote tags
     git fetch --all --tags
 }
