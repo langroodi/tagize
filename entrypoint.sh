@@ -106,7 +106,7 @@ MAJORVERSIONS=()
 # Map the unique major verions to the declared array
 mapfile -t MAJORVERSIONS < <( git tag | cut -d"${VERSIONSYMBOL}" -f2 | cut -d"." -f1 | sort | uniq )
 
-git show-ref --tag
+git log --oneline
 
 # Interate over all the major verions
 for MAJORVERSION in "${MAJORVERSIONS[@]}"; do
