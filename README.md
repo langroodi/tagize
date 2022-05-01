@@ -4,7 +4,7 @@
 This is a GitHub Action to automatically add/adjust Git tag aliases based on a semantic versioning schema.
 
 ## Docker Image Dependecies
-- Bash: > 4.10
+- Bash: > 4.0
 - Git: > 2.0
 - OpenSSH: > 7.0
 
