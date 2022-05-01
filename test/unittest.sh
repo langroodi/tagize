@@ -10,6 +10,10 @@ readonly VERSIONSYMBOL
 SANDBOXFOLDER="sandbox"
 readonly SANDBOXFOLDER
 
+# Declare the read-only bash script to be tested during the unt test
+BASHSCRIPT="entrypoint.sh"
+readonly BASHSCRIPT
+
 # Declare the read-only sandbox file name for unt testing
 SANDBOXFILE="sandbox.txt"
 readonly SANDBOXFILE
@@ -20,7 +24,7 @@ InitializeSandbox () {
 	# Initalize the sandbox repo within the current repo
 	git init
 	# Create the sandbox file
-	touch $SANDBOXFILE
+	cp "../../${BASHSCRIPT}" "./${BASHSCRIPT}"
 	# Stage the sandbox file creation
 	git add .
 	# Commit the sandbox file creation
@@ -193,7 +197,9 @@ InitializeActualResults () {
 	declare -g -A ACTUALRESULTS
 
 	cd $SANDBOXFOLDER
-	# Get the last commit hash
+
+	# Run the bash script
+	bash "./${BASHSCRIPT}"
 	# Read each command output line and split it by space into the tag name and the tag commit
 	while read TAGNAME TAGCOMMIT; do
 		# Consider the tag name as the associated array key and the tag commit as the key value
