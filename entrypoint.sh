@@ -32,7 +32,7 @@ InitializeTagDictionary () {
 	# Pipeline the result with 'awk '{print $2 " " $1}' to bring tags first and then the commit hashes
 	# Pipeline the result with 'cut -d"/" -f3' to remove 'refs/tags/' from the beginning of the tags
 	# Pipeline the result with 'cut -d"${VERSIONSYMBOL}" -f2' remove the version symbol from the beginning of the tags
-	done < <( git show-ref --tag | awk '{print $2 " " $1}' | cut -d"/" -f3 | cut -d"${VERSIONSYMBOL}" -f2 )
+	done < <( git ls-remote --tag | awk '{print $2 " " $1}' | cut -d"/" -f3 | cut -d"${VERSIONSYMBOL}" -f2 )
 }
 
 PushTag () {
