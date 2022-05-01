@@ -38,9 +38,15 @@ InitializeSandbox () {
 	git add .
 	# Commit the sandbox file creation
 	git commit -m "Initial commit"
+	# Pop back the current directory
+	cd ..
+	CURRENTDIRECTORY=${PWD##*/}
+	# Pop to the parent directory
 	cd ..
 	# Add the sandbox repo as the current repo sub-module
-	git submodule add "./${SANDBOXFOLDER}"
+	git submodule add "./${CURRENTDIRECTORY}/${SANDBOXFOLDER}"
+	# Pop back the current directory
+	cd "./${CURRENTDIRECTORY}"
 }
 
 AddSandboxTag () {
