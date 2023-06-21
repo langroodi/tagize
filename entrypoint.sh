@@ -75,9 +75,9 @@ AliasVersion () {
 	TAGMATCHES=()
 	# Launch 'git tag -l "${TAGPATTERN}' to get the existing tags starts with the tag pattern
 	# Pipeline the result with 'cut -d"${VERSIONSYMBOL}" -f2' to remove the version symbol from the beginning of the tags
-	# Pipeline the result with 'sort -r' to descendingly sort the tag matches
+	# Pipeline the result with 'sort -rV' to descendingly sort the tag matches based on version sorting
 	# Map the descending sorted tag matches to the declared array
-	mapfile -t TAGMATCHES < <( git tag -l "${TAGPATTERN}" | cut -d"${VERSIONSYMBOL}" -f2 | sort -r )
+	mapfile -t TAGMATCHES < <( git tag -l "${TAGPATTERN}" | cut -d"${VERSIONSYMBOL}" -f2 | sort -rV )
 	# Fetch the latest tag according to its version 
 	LATESTTAG="${TAGMATCHES}"
 	# Fetch the latest tag commit hash
@@ -101,10 +101,10 @@ MAJORVERSIONS=()
 # Launch 'git tag' to get the existing tags
 # Pipeline the result with 'cut -d"${VERSIONSYMBOL}" -f2' to remove the version symbol from the beginning of the tags
 # Pipeline the result with 'cut -d"." -f1' to parse the major version
-# Pipeline the result with 'sort' to sort the parsed major verions
+# Pipeline the result with 'sort -V' to sort the parsed major verions based on version sorting
 # Pipeline the result with 'unique' to remove the similar major verions
 # Map the unique major verions to the declared array
-mapfile -t MAJORVERSIONS < <( git tag | cut -d"${VERSIONSYMBOL}" -f2 | cut -d"." -f1 | sort | uniq )
+mapfile -t MAJORVERSIONS < <( git tag | cut -d"${VERSIONSYMBOL}" -f2 | cut -d"." -f1 | sort -V | uniq )
 
 # Interate over all the major verions
 for MAJORVERSION in "${MAJORVERSIONS[@]}"; do
@@ -122,10 +122,10 @@ for MAJORVERSION in "${MAJORVERSIONS[@]}"; do
 	# Launch 'git tag -l "${PATTERN}' to get the existing tags starts with the pattern
 	# Pipeline the result with 'cut -d"${VERSIONSYMBOL}" -f2' to remove the version symbol from the beginning of the tags
 	# Pipeline the result with 'cut -d"." -f 1-2' to parse the major version (1) and the minor version (2)
-	# Pipeline the result with 'sort' to sort the parsed major verions
+	# Pipeline the result with 'sort -V' to sort the parsed major verions based on version sorting
 	# Pipeline the result with 'unique' to remove the similar major verions
 	# Map the unique major verions to the declared array
-	mapfile -t MINORVERSIONS < <( git tag -l "${PATTERN}" | cut -d"${VERSIONSYMBOL}" -f2 | cut -d"." -f 1-2 | sort | uniq )
+	mapfile -t MINORVERSIONS < <( git tag -l "${PATTERN}" | cut -d"${VERSIONSYMBOL}" -f2 | cut -d"." -f 1-2 | sort -V | uniq )
 
 	# Interate over all the minor verions
 	for MINORVERSION in "${MINORVERSIONS[@]}"; do
